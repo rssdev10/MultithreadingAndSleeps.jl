@@ -29,6 +29,11 @@ N = 10
 using PyCall
 tm = pyimport("time")
 
+# Require JULIA_COPY_STACKS=1
+using JavaCall
+JavaCall.init(["-Xmx128M"])
+thread = @jimport java.lang.Thread
+
 
 for func in [
     test_runner,
@@ -41,4 +46,7 @@ for func in [
 
     # test 2. PyCall
     @time func(() -> tm.sleep(1), "PyCall", N)
+
+    # test 3. JavaCall
+    @time func(() -> jcall(thread, "sleep", Nothing, (jlong,), 1000), "JavaCall", N)
 end
