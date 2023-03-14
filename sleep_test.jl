@@ -14,10 +14,13 @@ function test_runner(func, titles, n)
     @info log("Done")
 end
 
-function test_spawn_runner(func, titles, n)
-    @info log("Running tasks for $titles")
-    @sync for _ in 1:n
-        Threads.@spawn func()
+function test_spawn_runner(func, title, n)
+    @info log("Running tasks for $title")
+    @sync for i in 1:n
+        Threads.@spawn begin
+            func()
+            @info "task $(title)/$(i) completed"
+        end
     end
     @info log("Done")
 end
@@ -42,11 +45,17 @@ for func in [
     @info string("Testing:", func)
 
     # test 1. Pure Julia sleep()
-    @time func(() -> sleep(1), "Julia", N)
+    @time func("Julia", N) do
+        sleep(1)
+    end
 
     # test 2. PyCall
-    @time func(() -> tm.sleep(1), "PyCall", N)
+    @time func("PyCall", N) do
+        tm.sleep(1)
+    end
 
     # test 3. JavaCall
-    @time func(() -> jcall(thread, "sleep", Nothing, (jlong,), 1000), "JavaCall", N)
+    @time func("JavaCall", N) do
+        jcall(thread, "sleep", Nothing, (jlong,), 1000)
+    end
 end
